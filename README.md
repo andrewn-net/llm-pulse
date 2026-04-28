@@ -200,6 +200,8 @@ Version, cache file location, last fetch time per source, alias count.
 
 **Snapshot history** — every fetch appends a new row rather than overwriting. This gives `digest` and `explain` their historical views automatically the longer you use it.
 
+**Auto-refresh** — data is cached locally and considered fresh for 6 hours. Every command checks the cache age and fetches from the APIs automatically if stale. Use `llmpulse refresh --force` to pull immediately.
+
 **Cache location** — `~/Library/Application Support/llm-pulse/cache.db` on macOS. Follows XDG on Linux and AppData on Windows via [`platformdirs`](https://github.com/platformdirs/platformdirs). The cache is never committed to the repo.
 
 ---
@@ -216,10 +218,10 @@ All data is fetched from free, public endpoints — no API keys required.
 ## Development
 
 ```sh
-git clone https://github.com/your-username/llm-pulse.git
+git clone https://github.com/andrewn-net/llm-pulse.git
 cd llm-pulse
 uv venv --python 3.12
 source .venv/bin/activate
-uv pip install -e ".[dev]"
-pytest
+uv pip install -e .
+llmpulse
 ```

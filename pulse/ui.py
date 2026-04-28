@@ -56,7 +56,7 @@ def print_logo(compact: bool = False) -> None:
     if not sys.stdout.isatty():
         return
     if compact:
-        console.print(f"[bold #E83E8C]▶[/] [bold #FFB75E]llmpulse[/]   [dim]{TAGLINE}[/]")
+        console.print(f"[bold #E83E8C]▶[/] [bold #FFB75E]llmpulse[/]  [bold #FFB75E on #2A0A1E] BETA [/]   [dim]{TAGLINE}[/]")
         return
     console.print()
     for line, color in zip(LOGO.splitlines(), SYNTHWAVE):
@@ -68,7 +68,7 @@ def print_logo(compact: bool = False) -> None:
         color = SYNTHWAVE[min(i * len(SYNTHWAVE) // len(HORIZON), len(SYNTHWAVE) - 1)]
         horizon_text.append(ch, style=color)
     console.print("  ", horizon_text)
-    console.print(f"  [bold #00F5D4]{TAGLINE}[/]")
+    console.print(f"  [bold #00F5D4]{TAGLINE}[/]  [bold #FFB75E on #2A0A1E] BETA [/]")
     console.print()
 
 

@@ -121,3 +121,44 @@ def cron_weekly(day_of_week: int, hour: int, minute: int = 0) -> str:
 
 def cron_monthly(day_of_month: int, hour: int, minute: int = 0) -> str:
     return f"{minute} {hour} {day_of_month} * *"
+
+
+# ─── GitHub Actions workflow generation ─────────────────────────────────────
+
+GHA_WORKFLOW_PATH = ".github/workflows/llmpulse-digest.yml"
+
+
+def render_gha_workflow(cron_expr: str) -> str:
+    """Render a GitHub Actions workflow YAML that runs `llmpulse digest --slack`."""
+    return f"""name: LLM Pulse digest
+
+on:
+  schedule:
+    - cron: "{cron_expr}"
+  workflow_dispatch:
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+
+      # Persist the SQLite cache across runs so digests have a real baseline.
+      - name: Restore llmpulse cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/llm-pulse
+          key: llmpulse-cache
+
+      - run: uv tool install --editable .
+
+      - run: llmpulse refresh --force
+
+      - run: llmpulse digest --slack
+        env:
+          LLMPULSE_SLACK_WEBHOOK: ${{{{ secrets.LLMPULSE_SLACK_WEBHOOK }}}}
+"""

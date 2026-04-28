@@ -283,9 +283,14 @@ _BACK   = "__back__"
 _CANCEL = "__cancel__"
 
 
-def schedule_wizard() -> tuple[str, str, str] | None:
-    """Walk the user through creating a cron job. Returns (name, cron_expr, command).
-    Every step has a ← Back option so mistakes are never permanent."""
+def schedule_wizard() -> tuple | None:
+    """Walk the user through scheduling a digest.
+
+    Returns one of:
+      ("cron", name, cron_expr, command)  — write to system crontab
+      ("gha",  cron_expr)                 — generate GitHub Actions workflow
+      None                                — cancelled
+    """
     import shutil
     from .schedule import DAYS_OF_WEEK, cron_daily, cron_monthly, cron_weekly
 
@@ -305,6 +310,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
         return result
 
     # ── state ──────────────────────────────────────────────────────────────────
+    method: str | None = None       # "cron" or "gha"
     freq: str | None = None
     hour: int | None = None
     day:  str | None = None
@@ -313,11 +319,26 @@ def schedule_wizard() -> tuple[str, str, str] | None:
     name: str | None = None
 
     what = "digest"  # only option
-    step = "freq"
+    step = "method"
 
     while True:
+        # ── runner: system crontab vs GitHub Actions ───────────────────────────
+        if step == "method":
+            v = _sel(
+                "Where should the digest run?",
+                [
+                    ("System crontab (this machine)",      "cron"),
+                    ("GitHub Actions (always-on, free)",   "gha"),
+                ],
+                allow_back=False,
+            )
+            if v is None:
+                return None
+            method = v
+            step = "freq"
+
         # ── frequency ──────────────────────────────────────────────────────────
-        if step == "freq":
+        elif step == "freq":
             v = _sel("How often?", [
                 ("Daily",                "daily"),
                 ("Weekly",               "weekly"),
@@ -327,7 +348,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
             if v is None:
                 return None
             if v == _BACK:
-                step = "cat" if what in ("pick", "list") else "what"
+                step = "method"
                 continue
             freq = v
             step = "custom" if freq == "custom" else "hour"
@@ -350,7 +371,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
                 console.print("  [red]✗ Need exactly 5 fields — try again.[/]")
                 continue
             cron_expr = raw
-            step = "name"
+            step = "name" if method == "cron" else "done"
 
         # ── hour picker ────────────────────────────────────────────────────────
         elif step == "hour":
@@ -361,7 +382,12 @@ def schedule_wizard() -> tuple[str, str, str] | None:
                 step = "freq"
                 continue
             hour = v
-            step = "day" if freq == "weekly" else ("dom" if freq == "monthly" else "name")
+            if freq == "weekly":
+                step = "day"
+            elif freq == "monthly":
+                step = "dom"
+            else:
+                step = "name" if method == "cron" else "done"
 
         # ── day of week (weekly only) ──────────────────────────────────────────
         elif step == "day":
@@ -372,7 +398,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
                 step = "hour"
                 continue
             day = v
-            step = "name"
+            step = "name" if method == "cron" else "done"
 
         # ── day of month (monthly only) ────────────────────────────────────────
         elif step == "dom":
@@ -383,7 +409,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
                 step = "hour"
                 continue
             dom = v
-            step = "name"
+            step = "name" if method == "cron" else "done"
 
         # ── name ───────────────────────────────────────────────────────────────
         elif step == "name":
@@ -409,7 +435,11 @@ def schedule_wizard() -> tuple[str, str, str] | None:
                 console.print("  [red]✗ Name required.[/]")
                 continue
             name = raw
-            break  # ✓ done
+            step = "done"
+
+        # ── exit ───────────────────────────────────────────────────────────────
+        if step == "done":
+            break
 
     # ── build final values ─────────────────────────────────────────────────────
     if freq == "daily":
@@ -420,8 +450,11 @@ def schedule_wizard() -> tuple[str, str, str] | None:
         cron_expr = cron_monthly(dom, hour)
     # custom: cron_expr already set above
 
-    cmd = f"{bin_path} digest --slack"
-    return name, cron_expr, cmd
+    if method == "cron":
+        cmd = f"{bin_path} digest --slack"
+        return ("cron", name, cron_expr, cmd)
+    else:
+        return ("gha", cron_expr)
 
 
 # ─── Friendly error wrapper ──────────────────────────────────────────────────

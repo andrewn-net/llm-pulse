@@ -163,17 +163,20 @@ Supports both **Slack Incoming Webhooks** (recommended) and **Workflow Builder**
 
 ---
 
-### `llmpulse schedule` — recurring digest via cron
+### `llmpulse schedule` — recurring digest via cron or GitHub Actions
 
 ```sh
 llmpulse schedule add     # interactive wizard with full back-navigation
-llmpulse schedule list    # show all scheduled jobs
-llmpulse schedule remove  # remove a job by name
+llmpulse schedule list    # show all crontab jobs
+llmpulse schedule remove  # remove a crontab job by name
 ```
 
-Schedules `llmpulse digest --slack` to run automatically. The wizard picks the frequency (daily / weekly / monthly / custom cron) and time, then writes the entry to your system crontab. Requires a configured Slack webhook.
+The wizard first asks where the digest should run, then walks you through frequency (daily / weekly / monthly / custom cron) and time:
 
-> **Note:** cron runs while your machine is awake. If your Mac is asleep at the scheduled time, the job is skipped for that run.
+- **System crontab** — writes an entry to your local crontab. Runs only while the machine is awake (closed lid = paused). Works anywhere.
+- **GitHub Actions** — writes a `.github/workflows/llmpulse-digest.yml` workflow file. **Requires:** your repo to be on GitHub + authenticated access. Runs on GitHub's free hosted runners, always on, no laptop dependency. The SQLite cache persists across runs so digests have a real baseline.
+
+Both options run `llmpulse digest --slack`. For GitHub Actions, you'll add your webhook as a repo secret named `LLMPULSE_SLACK_WEBHOOK` during setup.
 
 ---
 

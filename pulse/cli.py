@@ -138,19 +138,19 @@ def _dispatch_interactive(cmd: str) -> None:
 
 
 def _interactive_schedule() -> None:
-    if not _schedule.crontab_available():
-        console.print("  [yellow]`crontab` not found on this system.[/]")
-        return
     import questionary
     from .ui import QSTYLE
+    has_cron = _schedule.crontab_available()
+    choices = [questionary.Choice("Add a new job", value="add")]
+    if has_cron:
+        choices += [
+            questionary.Choice("List existing jobs (crontab)", value="list"),
+            questionary.Choice("Remove a job (crontab)",       value="remove"),
+        ]
+    choices.append(questionary.Choice("← Back to menu", value=None))
     action = questionary.select(
         "Schedule:",
-        choices=[
-            questionary.Choice("List existing jobs", value="list"),
-            questionary.Choice("Add a new job",      value="add"),
-            questionary.Choice("Remove a job",       value="remove"),
-            questionary.Choice("← Back to menu",     value=None),
-        ],
+        choices=choices,
         style=QSTYLE,
         qmark="◆",
     ).ask()
@@ -597,18 +597,51 @@ def schedule_remove(
 @schedule_app.command("add")
 def schedule_add() -> None:
     """Interactively create a recurring LLM Pulse job."""
-    if not _schedule.crontab_available():
-        console.print("  [yellow]`crontab` not found on this system.[/]")
-        raise typer.Exit(1)
     from .ui import schedule_wizard
     spec = schedule_wizard()
     if spec is None:
         return
-    name, cron_expr, command = spec
-    _schedule.add_job(name, cron_expr, command)
-    console.print(
-        f"  [green]✓ scheduled `{name}`[/] [dim]→ {cron_expr}  {command}[/]"
-    )
+
+    if spec[0] == "cron":
+        if not _schedule.crontab_available():
+            console.print("  [yellow]`crontab` not found on this system — pick GitHub Actions instead.[/]")
+            raise typer.Exit(1)
+        _, name, cron_expr, command = spec
+        _schedule.add_job(name, cron_expr, command)
+        console.print(
+            f"  [green]✓ scheduled `{name}`[/] [dim]→ {cron_expr}  {command}[/]"
+        )
+        return
+
+    if spec[0] == "gha":
+        from pathlib import Path
+        _, cron_expr = spec
+
+        # Check if we're in a git repo (workflow file only works if pushed to GitHub)
+        if not Path(".git").exists():
+            console.print(
+                "  [yellow]⚠ You're not in a Git repository.[/]\n\n"
+                "  GitHub Actions requires the workflow file to be pushed to GitHub.\n"
+                "  Steps:\n"
+                "  1. `cd` into your Git repo (or create one: `git init`)\n"
+                "  2. Run `llmpulse schedule add` again\n"
+                "  3. The workflow will be created in `.github/workflows/`"
+            )
+            raise typer.Exit(1)
+
+        path = Path(_schedule.GHA_WORKFLOW_PATH)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_schedule.render_gha_workflow(cron_expr))
+        console.print(f"  [green]✓ wrote workflow:[/] [cyan]{path}[/] [dim]→ {cron_expr}[/]")
+        console.print(
+            "\n  [bold]Next steps:[/]\n"
+            "  1. Ensure this repo is on GitHub (Settings → Collaborators).\n"
+            "  2. Add the webhook URL as a repo secret named "
+            "[cyan]LLMPULSE_SLACK_WEBHOOK[/] (Settings → Secrets → Actions).\n"
+            "  3. Commit and push the workflow file: `git add .github/ && git commit -m '...' && git push`.\n"
+            "  4. Trigger it once from the [cyan]Actions[/] tab to test "
+            "([dim]Run workflow[/] button)."
+        )
 
 
 if __name__ == "__main__":

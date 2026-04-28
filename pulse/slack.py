@@ -14,7 +14,8 @@ WEBHOOK_KEY = "slack_webhook_url"
 
 
 def get_webhook(conn: sqlite3.Connection) -> str | None:
-    return get_meta(conn, WEBHOOK_KEY)
+    import os
+    return os.environ.get("LLMPULSE_SLACK_WEBHOOK") or get_meta(conn, WEBHOOK_KEY)
 
 
 def save_webhook(conn: sqlite3.Connection, url: str) -> None:

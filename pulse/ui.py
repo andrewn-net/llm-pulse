@@ -287,7 +287,6 @@ def schedule_wizard() -> tuple[str, str, str] | None:
     """Walk the user through creating a cron job. Returns (name, cron_expr, command).
     Every step has a ← Back option so mistakes are never permanent."""
     import shutil
-    from .config import ARENA_CATEGORIES
     from .schedule import DAYS_OF_WEEK, cron_daily, cron_monthly, cron_weekly
 
     bin_path = shutil.which("llmpulse") or "llmpulse"
@@ -306,8 +305,6 @@ def schedule_wizard() -> tuple[str, str, str] | None:
         return result
 
     # ── state ──────────────────────────────────────────────────────────────────
-    what: str | None = None
-    cat:  str | None = None
     freq: str | None = None
     hour: int | None = None
     day:  str | None = None
@@ -315,35 +312,12 @@ def schedule_wizard() -> tuple[str, str, str] | None:
     cron_expr: str | None = None
     name: str | None = None
 
-    STEPS = ["what", "cat", "freq", "time", "name"]
-    step = "what"
+    what = "digest"  # only option
+    step = "freq"
 
     while True:
-        # ── what ───────────────────────────────────────────────────────────────
-        if step == "what":
-            v = _sel("What should it run?", [
-                ("Digest — what's changed since last run", "digest"),
-                ("Top picks for a category",               "pick"),
-                ("Full leaderboard for a category",        "list"),
-            ], allow_back=False)
-            if v is None:
-                return None
-            what = v
-            step = "cat" if what in ("pick", "list") else "freq"
-
-        # ── category (only for pick/list) ──────────────────────────────────────
-        elif step == "cat":
-            v = _sel("Which category?", [(c, c) for c in ARENA_CATEGORIES])
-            if v is None:
-                return None
-            if v == _BACK:
-                step = "what"
-                continue
-            cat = v
-            step = "freq"
-
         # ── frequency ──────────────────────────────────────────────────────────
-        elif step == "freq":
+        if step == "freq":
             v = _sel("How often?", [
                 ("Daily",                "daily"),
                 ("Weekly",               "weekly"),
@@ -446,10 +420,7 @@ def schedule_wizard() -> tuple[str, str, str] | None:
         cron_expr = cron_monthly(dom, hour)
     # custom: cron_expr already set above
 
-    cmd = f"{bin_path} {what} --slack"
-    if cat:
-        cmd = f"{bin_path} {what} --category {cat} --slack"
-
+    cmd = f"{bin_path} digest --slack"
     return name, cron_expr, cmd
 
 

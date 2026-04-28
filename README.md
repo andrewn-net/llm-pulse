@@ -163,7 +163,7 @@ Supports both **Slack Incoming Webhooks** (recommended) and **Workflow Builder**
 
 ---
 
-### `llmpulse schedule` — recurring Slack reports via cron
+### `llmpulse schedule` — recurring digest via cron
 
 ```sh
 llmpulse schedule add     # interactive wizard with full back-navigation
@@ -171,7 +171,7 @@ llmpulse schedule list    # show all scheduled jobs
 llmpulse schedule remove  # remove a job by name
 ```
 
-The wizard walks you through what to send (digest / picks / leaderboard), how often (daily / weekly / monthly / custom cron), and what time — writing the cron entry to your system crontab. Requires a configured Slack webhook.
+Schedules `llmpulse digest --slack` to run automatically. The wizard picks the frequency (daily / weekly / monthly / custom cron) and time, then writes the entry to your system crontab. Requires a configured Slack webhook.
 
 > **Note:** cron runs while your machine is awake. If your Mac is asleep at the scheduled time, the job is skipped for that run.
 

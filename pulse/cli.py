@@ -23,7 +23,7 @@ from .ui import (
     prompt_for_model,
     prompt_for_models,
     prompt_for_pick_filters,
-    prompt_for_task,
+    prompt_for_category,
     prompt_select_pick,
     welcome_first_run,
 )
@@ -79,12 +79,11 @@ def _root(ctx: typer.Context) -> None:
 def _dispatch_interactive(cmd: str) -> None:
     """Run a command interactively, prompting for any missing inputs."""
     if cmd == "pick":
-        task = prompt_for_task()
-        if task is None:
+        cat = prompt_for_category()
+        if cat is None:
             return
-        cat = task_to_category(task)
         f = prompt_for_pick_filters(category=cat)
-        console.print(f"  [dim]Task '{task}' → category: [cyan]{cat}[/][/]")
+        console.print(f"  [dim]Category: [cyan]{cat}[/][/]")
         active = _format_active_filters(f)
         if active:
             console.print(f"  [dim]Filters: {active}[/]")

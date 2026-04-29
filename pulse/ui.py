@@ -109,33 +109,30 @@ def main_menu() -> str:
 
 # ─── Interactive prompts inside commands ─────────────────────────────────────
 
-EXAMPLE_TASKS = [
-    "code review for python",
-    "summarize a long PDF",
-    "extract text from a screenshot",
-    "creative writing",
-    "general chat",
+CATEGORY_CHOICES = [
+    ("text",     "General chat & reasoning"),
+    ("code",     "Coding & engineering"),
+    ("vision",   "Image understanding (OCR, screenshots, diagrams)"),
+    ("document", "Long-form document analysis (PDFs, papers, contracts)"),
+    ("search",   "Web search & retrieval"),
 ]
 
 
-def prompt_for_task() -> str | None:
-    _OTHER = "Other (type your own)..."
-    _BACK  = "← Back to menu"
-    choice = questionary.select(
+def prompt_for_category() -> str | None:
+    """Pick one of the 5 Arena categories. Returns the category code or None."""
+    _BACK = "← Back to menu"
+    choices = [
+        questionary.Choice(f"{label}", value=code)
+        for code, label in CATEGORY_CHOICES
+    ]
+    choices.append(questionary.Choice(_BACK, value=None))
+    return questionary.select(
         "What do you want to do?",
-        choices=EXAMPLE_TASKS + [_OTHER, _BACK],
+        choices=choices,
         style=QSTYLE,
         qmark="◆",
         instruction="(↑/↓ to move, Enter to select)",
     ).ask()
-    if choice is None or choice == _BACK:
-        return None
-    if choice == _OTHER:
-        try:
-            return Prompt.ask("  [bold #00F5D4]task[/]", default="general chat")
-        except (KeyboardInterrupt, EOFError):
-            return None
-    return choice
 
 
 def prompt_for_model(model_names: list[str] | None = None) -> str:

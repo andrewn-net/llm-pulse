@@ -2,6 +2,8 @@
 name = "llmpulse"
 version = "0.1.0"
 description = "Take the pulse of the LLM landscape — pick a model, see what changed."
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "typer>=0.12",

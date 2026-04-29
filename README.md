@@ -8,6 +8,8 @@
 ```
 
 > **⚠ BETA** — functional but not thoroughly tested. Expect rough edges.
+>
+> **For educational and informational purposes only.** Recommendations are based on public Arena rankings and OpenRouter pricing data, which may be incomplete, mismatched, or out of date. Always verify a model's suitability for your specific task before using it in production.
 
 **A personal CLI for navigating the LLM landscape.** Pick the right model for any task, track what's changed, compare options — all from your terminal, with no API keys and no cost.
 

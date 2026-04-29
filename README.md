@@ -29,7 +29,7 @@ Requires Python 3.11+. Recommended: install with [uv](https://docs.astral.sh/uv/
 brew install uv
 
 # Clone and install
-git clone https://github.com/your-username/llm-pulse.git
+git clone https://github.com/andrewn-net/llm-pulse.git
 cd llm-pulse
 uv tool install --editable .
 ```
